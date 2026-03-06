@@ -52,6 +52,25 @@ scripts:
           make install
           popd
       done
+    - |2
+      # Build and install Qwt directly into AppDir/usr so linuxdeploy finds libqwt during the deploy step
+      wget https://downloads.sourceforge.net/project/qwt/qwt/6.1.4/qwt-6.1.4.tar.bz2 -O qwt-6.1.4.tar.bz2
+      tar xf qwt-6.1.4.tar.bz2
+      pushd qwt-6.1.4
+      # Make qwt install prefix point to AppDir/usr
+      if [ -f qwtconfig.pri ]; then
+        sed -i "s|^QWT_INSTALL_PREFIX *=.*|QWT_INSTALL_PREFIX = $BUILD_DIR/AppDir/usr|" qwtconfig.pri || true
+      fi
+      # Ensure pkg-config files also go under AppDir/usr/lib/pkgconfig
+      ${QMAKE:-qmake} qwt.pro
+      make -j$(nprocs)
+      make install
+      popd
+
+    - |2
+      # Ensure pkg-config sees the AppDir-installed Qwt for subsequent cmake configure steps
+      export PKG_CONFIG_PATH="$BUILD_DIR"/AppDir/usr/lib/pkgconfig:"$BUILD_DIR"/deps/lib/pkgconfig:"$PKG_CONFIG_PATH"
+      echo "PKG_CONFIG_PATH after qwt install: $PKG_CONFIG_PATH"
 
   post_build:
     - |2
