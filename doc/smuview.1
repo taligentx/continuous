@@ -1,0 +1,73 @@
+.TH SMUVIEW 1 "Januray 6, 2021"
+.SH "NAME"
+SmuView \- Qt-based source measure unit GUI for sigrok
+.SH "SYNOPSIS"
+.B smuview \fR[\fBOPTIONS\fR]
+.SH "DESCRIPTION"
+.B SmuView
+is a cross-platform Qt-based GUI for the
+.B sigrok
+software suite for test and measurement equipment such as power supplies,
+electronic loads, multimeters and more.
+.SH "OPTIONS"
+.B SmuView
+has very few command line options, as most configuration elements are
+available from the GUI itself.
+.TP
+.BR "\-l, \-\-loglevel " <level>
+Set the libsigrok loglevel. The higher the number, the more debug output will
+be printed. The dafault loglevel is 2 (Warnings), valid loglevels are:
+.sp
+\fB0\fP   None
+.br
+\fB1\fP   Error
+.br
+\fB2\fP   Warnings
+.br
+\fB3\fP   Informational
+.br
+\fB4\fP   Debug
+.br
+\fB5\fP   Spew
+.TP
+.B "\-h, \-?, \-\-help"
+Show a help text and exit.
+.TP
+.B "\-V, \-\-version"
+Show version information and exit.
+.TP
+.BR "\-d, \-\-driver " <drivername>
+Specify the capture device to connect to.
+.TP
+.BR "\-D, \-\-dont\-scan "
+Usually SmuView automatically scans all drivers to find suitable
+devices during program startup. This option disables the auto-scan.
+.TP
+.B "\-c, \-\-clean"
+Don't restore previous settings (like views, position and size) on startup.
+.TP
+.B \-\-driver
+Users can either specify the
+option to pick a device at startup, or interactively scan for devices
+after SmuView has finished starting up.
+.TP
+.BR "\-s, \-\-script " <path_to_smuscript>
+Specify the SmuScript to load and execute.
+.SH "EXIT STATUS"
+.B SmuView
+exits with 0 on success, 1 on most failures.
+.SH "SEE ALSO"
+\fBsigrok\-cli\fP(1)
+.SH "BUGS"
+Please report any bugs via Github
+.RB "(" https://github.com/knarfS/smuview/issues ")"
+or on the sigrok\-devel mailing list
+.RB "(" sigrok\-devel@lists.souceforge.net ")."
+.SH "LICENSE"
+.B SmuView
+is covered by the GNU General Public License (GPL), version 3 or later.
+.SH "AUTHORS"
+Please see the individual source code files.
+.PP
+This manual page was written by Frank Stettner <frank\-stettner@gmx.net>.
+It is licensed under the terms of the GNU GPL (version 3 or later).

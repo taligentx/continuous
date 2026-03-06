@@ -1,0 +1,8 @@
+*.pro.user*
+*~
+build*
+*.log
+*.tar.gz
+
+# KDEvelop
+.kdev4/

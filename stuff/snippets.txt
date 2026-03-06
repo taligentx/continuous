@@ -1,0 +1,156 @@
+Thread ID
+=========
+
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/syscall.h>   /* For SYS_xxx definitions */
+
+//pid_t tid = gettid();
+pid_t tid = syscall(__NR_gettid);
+sr_spew("ThreadId = %i", tid);
+
+
+
+Call Stack
+==========
+
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+void some_function() {
+	void* callstack[128];
+	int i, frames;
+	char** strs;
+
+	frames = backtrace(callstack, 128);
+	strs = backtrace_symbols(callstack, frames);
+	for (i = 0; i < frames; ++i) {
+		printf("%s\n", strs[i]);
+	}
+	free(strs);
+}
+
+
+
+CMake
+=====
+
+Output file in Docker:
+----------------------
+
+file(READ /home/runner/work/smuview/smuview/build/cmake-build/CMakeFiles/CMakeOutput.log OUT_LOG)
+message(WARNING "CMakeOutput.log: ${OUT_LOG}")
+
+
+See https://stackoverflow.com/questions/9298278/cmake-print-out-all-accessible-variables-in-a-script
+----------------------------------------------------------------------------------------------------
+
+Using the get_cmake_property function, the following loop will print out all CMake variables defined and their values:
+
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
+
+
+This can also be embedded in a convenience function which can optionally use a regular expression to print only a subset of variables with matching names
+
+function(dump_cmake_variables)
+    get_cmake_property(_variableNames VARIABLES)
+    list (SORT _variableNames)
+    foreach (_variableName ${_variableNames})
+        if (ARGV0)
+            unset(MATCHED)
+            string(REGEX MATCH ${ARGV0} MATCHED ${_variableName})
+            if (NOT MATCHED)
+                continue()
+            endif()
+        endif()
+        message(STATUS "${_variableName}=${${_variableName}}")
+    endforeach()
+endfunction()
+
+
+To print environment variables, use CMake's command mode:
+---------------------------------------------------------
+
+execute_process(COMMAND "${CMAKE_COMMAND}" "-E" "environment")
+
+
+To print all defined properties of a target:
+--------------------------------------------
+
+# Get all propreties that cmake supports
+execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)`
+
+# Convert command output into a CMake list
+STRING(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+STRING(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+# Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+list(FILTER CMAKE_PROPERTY_LIST EXCLUDE REGEX "^LOCATION$|^LOCATION_|_LOCATION$")
+# For some reason, "TYPE" shows up twice - others might too?
+list(REMOVE_DUPLICATES CMAKE_PROPERTY_LIST)
+
+# build whitelist by filtering down from CMAKE_PROPERTY_LIST in case cmake is
+# a different version, and one of our hardcoded whitelisted properties
+# doesn't exist!
+unset(CMAKE_WHITELISTED_PROPERTY_LIST)
+
+foreach(prop ${CMAKE_PROPERTY_LIST})
+    if(prop MATCHES "^(INTERFACE|[_a-z]|IMPORTED_LIBNAME_|MAP_IMPORTED_CONFIG_)|^(COMPATIBLE_INTERFACE_(BOOL|NUMBER_MAX|NUMBER_MIN|STRING)|EXPORT_NAME|IMPORTED(_GLOBAL|_CONFIGURATIONS|_LIBNAME)?|NAME|TYPE|NO_SYSTEM_FROM_IMPORTED)$")
+        list(APPEND CMAKE_WHITELISTED_PROPERTY_LIST ${prop})
+    endif()
+endforeach(prop)
+
+function(print_target_properties tgt)
+    if(NOT TARGET ${tgt})
+        message("There is no target named '${tgt}'")
+        return()
+    endif()
+
+    get_target_property(target_type ${tgt} TYPE)
+    if(target_type STREQUAL "INTERFACE_LIBRARY")
+        set(PROP_LIST ${CMAKE_WHITELISTED_PROPERTY_LIST})
+    else()
+        set(PROP_LIST ${CMAKE_PROPERTY_LIST})
+    endif()
+
+    foreach (prop ${PROP_LIST})
+        string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" prop ${prop})
+        # message ("Checking ${prop}")
+        get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)
+        if (propval)
+            get_target_property(propval ${tgt} ${prop})
+            message ("${tgt} ${prop} = ${propval}")
+        endif()
+    endforeach(prop)
+endfunction(print_target_properties)
+
+
+32bit build on 64bit:
+---------------------
+
+export C="--host=i686-linux-gnu --build=i686-linux-gnu"
+export CC="gcc -m32"
+export CXX="g++ -m32"
+export CFLAGS="-O2 -march=i686"
+export CXXFLAGS="-O2 -march=i686"
+export LD="ld -melf_i386"
+export LDFLAGS="-m32"
+
+
+Qt for Ubuntu
+=============
+
+https://launchpad.net/~beineri/
+
+Instead for sourcing the env file:
+
+export QTDIR=/opt/qt512
+export PATH=/opt/qt512/bin:$PATH
+export LD_LIBRARY_PATH=/opt/qt512/lib/i386-linux-gnu:/opt/qt512/lib:$LD_LIBRARY_PATH
+export PKG_CONFIG_PATH=/opt/qt512/lib/pkgconfig:$PKG_CONFIG_PATH
+sudo ldconfig

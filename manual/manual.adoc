@@ -1,0 +1,34 @@
+SmuView User Manual
+===================
+Version {sv_version}, dated {localdate}
+:doctype: book
+:imagesdir: ./images
+:sectnums:
+:toc:
+:toclevels: 2
+:icons: font
+:figure-caption: Image
+:source-highlighter: coderay
+:experimental:
+:sv_version:
+:sv_manual_version:
+
+ifdef::ebook-format[:leveloffset: -1]
+
+include::overview.adoc[]
+
+include::installation.adoc[]
+
+include::devices.adoc[]
+
+include::data_visualisation.adoc[]
+
+include::data_processing.adoc[]
+
+include::device_control.adoc[]
+
+include::smuscript.adoc[]
+
+include::cli.adoc[]
+
+include::license.adoc[]

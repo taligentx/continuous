@@ -1,0 +1,56 @@
+<RCC>
+	<qresource prefix="/">
+		<file>icons/smuview.ico</file>
+		<file>icons/smuview.png</file>
+		<file>icons/smuview.svg</file>
+
+		<file>icons/status-green.svg</file>
+		<file>icons/status-grey.svg</file>
+		<file>icons/status-red.svg</file>
+
+		<file>icons/chronometer.png</file>
+		<file>icons/configure.png</file>
+		<file>icons/document-new.png</file>
+		<file>icons/document-open-folder.png</file>
+		<file>icons/document-open.png</file>
+		<file>icons/document-save-as.png</file>
+		<file>icons/document-save.png</file>
+		<file>icons/edit-delete.png</file>
+		<file>icons/edit-find.png</file>
+		<file>icons/edit-table-delete-row.png</file>
+		<file>icons/edit-table-insert-row-under.png</file>
+		<file>icons/go-bottom.png</file>
+		<file>icons/help-about.png</file>
+		<file>icons/list-add.png</file>
+		<file>icons/list-remove.png</file>
+		<file>icons/media-playback-pause.png</file>
+		<file>icons/media-playback-start.png</file>
+		<file>icons/media-playback-stop.png</file>
+		<file>icons/mixer-front.png</file>
+		<file>icons/object-locked.png</file>
+		<file>icons/object-unlocked.png</file>
+		<file>icons/office-chart-area.png</file>
+		<file>icons/office-chart-line-percentage.png</file>
+		<file>icons/office-chart-line.png</file>
+		<file>icons/preferences-system.png</file>
+		<file>icons/snap-guideline.png</file>
+		<file>icons/snap-orthogonal.png</file>
+		<file>icons/tab-new-background.png</file>
+		<file>icons/view-form-table.png</file>
+		<file>icons/view-refresh.png</file>
+		<file>icons/window-new.png</file>
+		<file>icons/zoom-fit-best.png</file>
+		<file>icons/zoom-in.png</file>
+		<file>icons/zoom-original.png</file>
+		<file>icons/zoom-out.png</file>
+
+		<file>icons/channels.svg</file>
+		<file>icons/information.svg</file>
+		<file>icons/menu.svg</file>
+		<file>icons/settings-views.svg</file>
+
+		<!-- Fonts -->
+		<file>fonts/DejaVuSansMono.ttf</file>
+
+	</qresource>
+</RCC>

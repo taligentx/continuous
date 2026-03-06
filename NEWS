@@ -1,0 +1,113 @@
+0.0.5 (2021-01-09)
+------------------
+
+For a detailed list of changes, please see the git commit history.
+
+ * Save and restore settings:
+   - Save/restore the size and position of the main window.
+   - Save/restore the shown views and their size/position for a specific device.
+   - Add a tab for curve color settings in the plot config dialog.
+   - Add -c cmd line parameter for don't restoring the settings.
+   - Save/restore the settings of the find and replace dialog.
+   - Save/restore last directory of the SmuScript tree.
+   - Save/restore the settings of the save signals dialog.
+ * Enhance the Python API:
+   - Message Boxes and input dialoges for various data types.
+   - Return the view id when adding a new view.
+   - Improve bindings for time and x/y plots.
+   - Add function to set/change a curve color.
+   - Add function to set a custom signal name.
+   - Add function to set a custom plot curve name.
+   - Add functions for getting the available config keys.
+ * More verbose device info in the about dialog.
+ * Plot view:
+   - Make curve name editable and curve removable.
+   - Fix the axis lock labels.
+ * Many improvements for the python editor.
+ * Add a find and replace dialog for the python editor.
+ * Add a time window option to combine analog values when saving signals (Thanks to Cymaphore).
+ * Support for the new "force_detect" connection parameter of libsigrok.
+ * Update libsigrok for new devices and bugfixes.
+ * Update manual for SmuView.
+ * Many more bug fixes and improvements.
+
+0.0.4 (2020-02-18)
+------------------
+
+For a detailed list of changes, please see the git commit history.
+
+ * Embed a Python interpreter to automate measurements and device control.
+ * Add an editor to create and modify Python scripts.
+ * Add a command line parameter to load and execute Python scripts.
+ * Countless layout and GUI improvements, for example:
+   - Improve device control views.
+   - Replace the knob in the control views with a slider widget.
+   - Don't freeze the connection dialog when loading bluetooth LE devices.
+   - Ability to add a single signal to a XY-plot.
+   - Improve changing plot modes.
+   - Make the plot markers box position configurable.
+   - Nicer looking plot markers and better initial plot marker position.
+   - Support multiple signals per data table view.
+   - Add plot curve colors for various quantities and use random color for unknown quantities.
+   - Use embedded mono space font for the value displays.
+   - Stack views to save space.
+   - Settings for line and symbol style in the plot config dialog.
+   - Don't mess up the plot axis, when the signal value overflows.
+   - Add function to save plots as image.
+ * Add class AnalogSampleSignal to store sample via Python.
+ * Add a view to apply sequences to (device) controls like the output voltage.
+ * Create a manual for SmuView.
+ * Many bug fixes.
+
+0.0.3 (2019-04-04)
+------------------
+
+For a detailed list of changes, please see the git commit history.
+
+ * Various layout improvements
+ * Revert "feature" that only one signal can be added to fixed channels
+ * Plot view:
+   - Improve axis locking
+   - Improve axis scale updates
+   - Add the same signal only once
+ * Commit spin box values only when enter is pressed or widget is leaved
+ * Use a monospace font instead of the LCD font for various views
+ * Add ConfigKey OFFSET
+
+0.0.2 (2019-03-21)
+------------------
+
+For a detailed list of changes, please see the git commit history.
+
+ * Add manpage
+ * Add Fedora support (Thanks to gvegidy)
+ * Plot view:
+   - Curve colors
+   - Better legend titles
+   - Add AC/DC to curve unit names (axis labels)
+   - Use one axis for data with the same quantity / quantity flags
+   - Fix non working mouse wheel over axis
+ * Use linear interpolation to combine signals with different time intervals:
+   - Used in math channles
+   - Used in x/y-plot view
+ * Use session start timestamp as start timestamp for channels and signals
+ * Fix bug when listing ConfigKey SAMPLERATE
+ * Fix bugs in ui datatype widgets
+ * Add GenericControlView
+ * Add support for the demo device
+ * Initially populate serial connections in the connection dialog
+ * Add "addition with constant" math channel
+ * Add "moving average" math channel
+ * New device tree
+ * Move "add device" and "add user device" to new device tree
+ * Add start/stop aquisition to device tab
+ * Add disconnect device in device tree
+ * Add clear signal to device tree
+ * Add configurabel and config keys to device tree
+ * Add support for interleaved samples (demo device and oscilloscopes)
+ * Auto resize (device) combo boxes
+
+0.0.1 (2019-01-21)
+------------------
+
+ * Initial release.

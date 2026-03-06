@@ -1,0 +1,242 @@
+SmuView
+=======
+
+ToDo clang-tidy
+---------------
+
+- Unify readability-implicit-bool-conversion (AllowPointerConditions) -> " == nullptr" and " != nullptr"
+- readability-redundant-member-init.IgnoreBaseInCopyConstructors = 1 not always working!
+- src/ui/datatypes/doubledisplay.hpp 	void setup_ui(); // TODO: widgets::MonoFontDisplay also has setup_ui()
+- src/ui/datatypes/basewidget.hpp Q_SLOTS redesign?
+- src/ui/datatypes/doubledisplay.hpp: setup_ui() override, b/c of widgets::MonoFontDisplay.
+- bugprone-narrowing-conversions: Maybe use boost convert_to<>() -> see util.cpp, format_time_minutes()
+
+ToDo Release
+------------
+
+- Python binding for save CSV
+
+ToDo clazy
+----------
+
+- Disabled due to false positives:
+	- connect-non-signal
+	- incorrect-emit
+
+
+ToDo Scope
+----------
+
+- Fix ConfigKey sample_rate in UInt64Property::change_value(const QVariant qvar)
+
+ToDo
+----
+
+- Use util::Timestamp?
+- last_value_, min_value_, max_value_ -> std::atomic!
+- Plot: Sampling
+- Mutex for aquisition_state_?
+- Save all data (gnuplot, octave, ...)
+	- add a saveutil.cpp
+- Configurable:
+	- default check for getable/setable in get/set functions without assert(false)?
+	- add button to sink/source/demodmm/measurement-ControlViews to control non default config keys.
+	- Check getable/setable/listable also in the properties
+	- Enhance ThresholdControl widget (e.g for re:load pro). Maybe a dedicated property?
+		- Dedicated SvDoubleSpinBox and SvBoolButton?
+- Breeze icons action/labplot-* for plots?
+- Get fixed quantity signals from channel(/channel group) (q/qf/u is set in ch.meaning at the beginning). Implement in sigrok!
+- Implement something like ch.meanings for config keys in sigrok, so smuview known the quantity/unit of config keys.
+- Start timestamp on_update() -> device ctor -> timestamp = .0
+- Start timestamp to session
+- Use new connect/disconnet variant whenever possible.
+- Use connect(obj, SIGNAL, SIGNAL) when possible (UIProxy/UIHelper)
+- Lookup: std::atomic, std::condition_variable, std::mutex
+- Remove "const Session &session" form ui::devices::* ctors and more??
+- Maybe: In all ctors "Session &session" -> "const Session &session"
+- Resize the DockWidgets/Views to their best sizes (value panels minimum, plot views max, ...). Maybe with QMainWindow->resizeDocks, SizePolicy in QDockWidget does not work....
+- boost::stacktrace, see pv
+- BaseDevice open()/close(): move aquisition stuff to HardwareDevice, move VirtualDevice stuff to BaseDevice
+- util.cpp: use cmath instead of math.h, but Timestamp is boost and only works with non std::?
+- Use AnalogBaseSignal in all(?) Channel classes, in View classes and in Plot classes
+- Remove Configurable and ConfigKey from data::properties::*
+- Session: shared_ptr or reference?
+- Missing msvcr100.dll (Windows Server 2016) SmuView/PulseView
+- DeviceTree: Button for expand/close all
+- Plot: Add gradient (dY/dX) to diff marker in plot marker box
+- Plot: Movable polt marker box. Maybe not possible b/c of missing stuff in qwt?
+- Plot: Highlight polt marker and plot marker box when mouse over (near by for marker)
+- Plot: Class for marker -> qwt curve tracker playground
+- SequenceView: Handle headers (order of columns, time abs/rel) in CSV
+- SequenceView: Handle units (ms, s, h, ...) in CSV
+- PlotView: Make resolution and dpi configurable when saving as image
+- Implement AnalogXYDataSignal (for python automatisation)? See scope support?
+- MonoFontDisplay/PowerPanelView: To small for neg. values (esp. W/Ah/Wh with 6632B). B/c of the decimal point?
+- Remove LCDDisplay?
+- Reduce/Simplyfy BaseDevice name methods
+- Bindings: Implement add_math_channel()
+- Can we inherit MathChannel from UserChannel?
+- Unify name of static (const) variables
+- Remove devicetab.hpp time_unit_
+- Cycle: replace BaseChannel::parent_device_ with device_id_, and so on....
+- main.cpp: Remove while loop.
+- AnalogTimeSignal: Move signal_start_timestamp_ to BaseSignal
+- *Signal: Clean up Signal classes
+- Add a way to change a channel/signal name in the GUI. Connect BaseSignal::name_changed() signal.
+- Add a way to change the plot curves that have a default color to the new default color configured in the PlotConfigDialog. E.g. with a singleton to connect a dialog to multiple curves from different plots.
+- Use singleton for SettingsManager instead of static methods?
+- Use deleteLater() instead of delete
+- Add AddPlotCurveDialog with channel and signals.
+- Manage axes in plot.cpp: Per Quantity and not per curve! Test: Remove all curves and add a new one....
+- UiHelper/UiProxy: Remove tab_id?
+- SettingsManager: Method for getting the QSettings object and maybe load an user defined QSettings-file.
+- example_multiplexer.py: Checkboxes in control views don't change.
+- Keyboard shortcuts (Ctrl-Q -> Close App, Ctrl-W -> Close tab)
+
+Done
+----
+
+- Check in connect.cpp if GPIB is part of build info (libsigrok -> backend.c)
+- Everey device must have its own session:
+	1. Performance: With one sessions the aquisition functions are processed in sequence.
+		The HP 3478A f.e. takes for ever, and so the other devices to. There are NO parallel
+		requests.
+	2. Adding new device to a running session: Chicken/Egg problem! Dev->open() tries to
+		start aquisition, but device is not added to session yet (cxx binding).
+		session->add_device() tries to start aquisition, but device is not opened yet...
+	3. Solves the sr_session_source_add_internal() dublicate key problem.
+	4. Propably use the multidevice API functions from linux gpib in scpi_libgpib.c
+
+- Better detection of common_time_data_ (when in frame). Who is this possible when in
+	init_signal() and not afterwards when in feed_in()
+- QIcon (On/Off/Dis) -> Led: State(On/Off), Mode(En/Dis)
+- ValueControl implement is_value_setable_/is_value_getable_ and disable/enable controls
+- Save signals as CSV
+- Math channels (for Power, resistance, Wh, Ah)
+- Correlation between time bases (common, same count+fixed diff, "random") in (Analog)Data
+- Configurable:
+	- list_config
+	- default check for listable in list function without assert(false)
+	- Remove unused specific functions
+	- min/max/step in views when not listable
+	- Add functions for datatypes -> determin what list_* function to use
+	- make the sink/source/demodmm/measurement-ControlViews more generic
+	- signals for controls (views) to work with processing
+	- Cache stuff
+	- Missing sigok::ConfigKey::OFFSET
+	- get_mq / set_mq problem with template?
+	- Move is_controllable() to tab/view? Make more generic... -> Generic is_controllable() function, and specialized function in viewhelper.cpp
+- namespace src/data/datautil.hpp
+- Refactor ui class members CamelCase -> _ _ _
+- Replace all "    Q_OBJECT" with "	Q_OBJECT" (4 spaces -> 1 tab)
+- Replace other "    " -> "	" (4 spaces -> 1 tab)
+- Autoscale plot. Plot doesn't always auto-update scale (rlp without load)
+- Remove "hp3478a" from gpib_libgpib_name_ and list all available names.
+- DataView: Add toolbar with "StayAtBottom" switchable action.
+- Remove all items in combo box when parent has changed and setup_ui() is recalled?	see ConfigKeyComboBox and ConfigurableComboBox
+- Refactore:
+	- src/data/datautil.cpp -> src/data/
+	- src/devices/deviceutil.cpp -> src/data/
+	- src/devices/properties/ -> src/data/
+- DataView: add signal (into this table) action
+- static unsigned int device_counter; is changing
+- License headers are not the same
+- Session: move init to main.cpp
+- Bindings: Binding for setting the color of a plot curve
+- Bindings: Set name for new signal? e.g. f(x, y, name=nullptr)
+- Add "E" for detecting energy (Wh) channels
+- ValueDisplay SLOTS: CallByRef &?
+- Connection dialog thread
+- BaseChannel::add_signal(), L. 156, Korad PSU TODO
+- Save session
+- Segfault when closing/disconnet devices via UI/DevicesView
+
+Won't fix
+---------
+
+- QWT Multiaxis
+- Refactore:
+	- src/data -> src/signals
+- src/data/properties/* on_value_changed(gvar) -> on_value_changed(const gvar)
+- *.hpp: virtual f_name() = 0; -> virtual f_name() = nullptr;
+
+
+
+libsigrok
+=========
+
+- Add GPIB address to libgpib:conn as paramenter
+- Re:load Pro: when acquisition is running and we send a command (e.g. "set xxx"), there are 2 listeners (1st send_cmd() (<-serial_write_blocking) and 2nd handle_new_data() (<-serial_read_nonblocking))
+	- Make devc->acquisition_running thread safe, bool is NOT thread safe!
+- Re:load Pro: when 2 responses are send fast afer each other, serial_read_nonblocking reads them both and the \r\n gets in beetween
+- Re:load Pro: sometimes only a ^M is send from the rlp
+- Re:load Pro: Sometimes the responses are mixed up (2 listeners??, Re:load Pro not keeping up??)
+- Re:load Pro: how to clear otp_active and uvc_active?
+- hp3478a: device isn't closed after stopping acquisition
+- scpi-pps: protocol.c -> scpi_pps_receive_data() uses double, but output (e.g. analog) and DF_ANALOG receivers use hardcoded float. Using sr_analog_encoding.unitsize and .is_float to define the datatype (and size) (.unitsize = sizeof(double) (or by lurchi_: .unitsize=8 + float is double)) in the receiver functions!
+- dev_acquisition_start() has to do first measurement (3478a, scpi-pps, reload(?)), because 1. DF_HEADER, 2. trigger measurement
+	- If not: 3378a use scpi_cmd_resp() for use of mutex (wrt+read);
+- Can't add 2x scpi_libgpib devices: scpi_libgpib.c -> scpi_gpib_source_add() calls session.c -> sr_session_source_add() with fd = -1. This calls session.c -> sr_session_fd_source_add() with key = GINT_TO_POINTER(fd) and finally throws an error in session.c -> sr_session_source_add_internal() because "Event source with key %p already exists."
+- scpi-pps: when in acquisition send one write ":MEAS:VOLT?;:MEAS:CURR?" instead of 2 writes when possible
+- Add channel.meaning.mq, channel.meaning.mqflags, channel.meaning.unit (+channel.fixed) to PPU and load channels, to make it easy to init signals in smuview
+- Add missing units: sigrok::Unit::DECIBEL
+- scpi-pps/hp66xxx: Return always TRUE for OVP_ENABLED
+- hp3478a: spec_digits and enc_digits are used in the wrong way!
+- Fix UserDevice::open() and ::close() -> virtual in BaseDevice and empty in UserDevice
+
+WIP
+---
+
+- Change key naming (see load + psu wiki pages)
+
+Done
+----
+
+- Re:load Pro: send "monitor 0" when device is scaned to stop eventually running monitoring and version can be read properly
+- Re:load Pro: send "monitor 0" when device is closed
+- Wrong string to float/double conversion (because of locale settings):
+	- dmm/m2110.c: 2x sscanf((const char *)buf, "%f", &val) == 1 -> sr_atof_ascii((const char *)buf, &val) == SR_OK
+	- motech-lps-30x/protocol.c: sr_atod(devc->buf, &dbl)
+	- dmm/metex14.c: sscanf((const char *)&valstr, "%f", result) -> sr_atof_ascii((const char *)&valstr, result)
+	- scpi/scpi.c: sr_atod(response, scpi_response) -> sr_atod_ascii(response, scpi_response)
+- hp3478a: acquisition doesn't stop (sigrok-cli/smuview must be killed)
+- Tests for convertion (st_ascii_tod) for locale "bugs"
+- use mutex around ibwrt() and ibrd() (scpi_libgpib.c) per device, so they are thread safe
+- use mutex around scpi_cmd_resp() and scpi_cmd() (helpers.c), so when a request has a response, they are thread safe.
+- Mutex of scpi/helpers.c:
+	- find all ocurrence of (sr_scpi_send_variadic(), sr_scpi_send(), scpi_cmd(), scpi_cmd_resp(), rigol_ds_config_set(), ....) and check if thread safe
+	- Any functions missing, that need the mutex
+	- Valid for SCPI over something something?
+- Mutex of scpi_libgpib: Add to other transport variants (serial, tcp, ...), if so is the mutex in scpi/helpers.c enough?
+- scpi-pps: add otp/ovp/ocp to pps_profiles[] (or to channel(group)) for HP 663xx
+- HP3478A: Implement SPoll,
+- Add missing confg key sigok::ConfigKey::OFFSET
+- Provied SR_DF_META packets for the Re:load Pro and the HP3478A for changed values/states (e.g. output switched on/off, ovp, otp, ...)
+- Add mqflags (AC/DC) to channel_group_spec for scpi-pps
+- scpi-pps/hp66xxB: Don't send SCPI_CMD_REMOTE and SCPI_CMD_LOCAL when GPIB is used. Will result in error 602.
+- scpi-pps/hp66xxx: Check if SPoll is faster than sending *STB? / FAULT?, if so implement and use SPoll (or SRQ) when using GPIB.
+- scpi-pps's have channel groups but options/keys/_lists_ (voltage_target, ...) apply to device
+- Add missing units: sigrok::Unit::JOULE, sigrok::Unit::AMPEREHOUR, sigrok::Unit::COULOMB
+- HP-3478A: R4W -> R2W not working
+
+Won't fix
+---------
+
+- Re:load Pro: Don't use "monitor 200", Instead "read" values every aquisition cycle with serial "read line blocking" and use a mutex around every read, write and write+read
+- Add missing units: sigrok::Unit::(HECTO)PASCAL
+
+
+
+Doku
+====
+
+- Link API to the psu and load wiki pages
+
+
+
+Re:load Pro Firmware
+====================
+
+- Add "output" command (returns "on" / "off") to determin in wich state the output is (git commit 448cf71, 558bc0e (part))
+- Send "on" / "off" when output state was changed at the device directly
+- Send "uvlo xxx" when undervoltage threshold was changed at the device directly (git commit 224ab62)

@@ -1,0 +1,117 @@
+[[smuscript,SmuScript]]
+== SmuScript
+
+SmuView has a Python scripting extension to automate, setup and control complex
+or repetitive measurements, to process the incoming data and to create a
+standardized user interface for those measurements.
+
+The `smuview` Python module offers two default object instances: `Session` and
+`UiProxy`.
+The `Session` object gives access to already connected devices or connects new
+devices. The returned device object can then be used to read data from the
+device or control the device.
+The `UiProxy` object instance is used to modify the user interface, for example
+adding tabs or views.
+
+[WARNING]
+Only one script can be executed at a time!
+
+You can find an API documentation https://knarfs.github.io/doc/smuview/{sv_manual_version}/python_bindings_api.html[here]
+and example scripts in the `smuscript` folder.
+
+SmuView provides a basic editor to edit and run scripts. Here you can use the
+keyboard shortcuts kbd:[Ctrl+S] to save the current file and kbd:[Ctrl+F] to open
+the search and replace dialog.
+
+image::SmuScript.png[]
+
+image:numbers/1.png[1,22,22] Directory tree. +
+image:numbers/2.png[2,22,22] Script editor. +
+image:numbers/3.png[3,22,22] Script output. +
+image:numbers/4.png[4,22,22] Create a new script. +
+image:numbers/5.png[5,22,22] Open the selected script file. +
+image:numbers/6.png[6,22,22] Execute the selected script file. +
+image:numbers/7.png[7,22,22] Open new script file. +
+image:numbers/8.png[8,22,22] Save script file. +
+image:numbers/9.png[9,22,22] Save script file with a new name. +
+image:numbers/10.png[10,22,22] Execute script file. +
+image:numbers/11.png[11,22,22] Open Search & Replace dialog. +
+image:numbers/12.png[11,22,22] Scroll to bottom. +
+image:numbers/13.png[11,22,22] Clear output window.
+
+SmuScripts can also be started on startup, using the command line parameter
+`-s`:
+[listing, subs="normal"]
+smuview -s /path/to/script.py
+
+=== Examples
+
+The following short example connects the HP 3478A DMM via GPIB, reads a sample
+and creates the default tab for the device:
+
+[source,python]
+----
+import smuview
+import time
+
+# Connect device.
+dmm_dev = Session.connect_device("hp-3478a:conn=libgpib/hp3478a")[0]
+# Sleep 1s to give the devices the chance to create signals
+time.sleep(1)
+# Get last sample from channel P1
+sample = dmm_dev.channels()["P1"].actual_signal().get_last_sample(True)
+print(sample)
+
+# Add default tab for the DMM device.
+UiProxy.add_device_tab(dmm_dev)
+----
+
+The following more complex example script from the `smuscript` folder
+characterizes a battery and plots the resulting graph:
+
+.example_characterize_battery.py
+[source,python]
+----
+import smuview
+import time
+
+# Connect devices
+load_device = Session.connect_device("arachnid-labs-re-load-pro:conn=/dev/ttyUSB1")[0]
+load_conf = load_device.configurables()["1"]
+dmm_device = Session.connect_device("hp-3478a:conn=libgpib/hp3478a")[0]
+dmm_conf = dmm_device.configurables()[""]
+
+# Init device settings
+load_conf.set_config(smuview.ConfigKey.CurrentLimit, .0)
+dmm_conf.set_config(smuview.ConfigKey.MeasuredQuantity, smuview.Quantity.Voltage)
+
+# Give the devices the chance to create signals
+time.sleep(1)
+
+# Add user device
+user_device = Session.add_user_device()
+# Add channel for measurement values
+user_device.add_user_channel("Results", "User")
+result_ch = user_device.channels()["Results"]
+
+# Show device tabs and add plot to user device
+UiProxy.add_device_tab(load_device)
+UiProxy.add_device_tab(dmm_device)
+UiProxy.add_device_tab(user_device)
+UiProxy.add_plot_view(user_device.id(), smuview.DockArea.BottomDockArea, result_ch)
+
+# Start test
+load_conf.set_config(smuview.ConfigKey.CurrentLimit, .150)
+
+# Drain the battery until it is below 0.5 Volt
+value = 100
+while value > 0.5:
+    # Take a reading every 2s and write it to the user channel
+    time_stamp = time.time()
+    value = dmm_device.channels()["P1"].actual_signal().get_last_sample(True)[1]
+    result_ch.push_sample(value, time_stamp, smuview.Quantity.Voltage, set(), smuview.Unit.Volt, 6, 5)
+    time.sleep(2)
+
+# Set device settings to a save state
+load_conf.set_config(smuview.ConfigKey.CurrentLimit, .0)
+----
