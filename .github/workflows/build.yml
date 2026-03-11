@@ -148,8 +148,10 @@ jobs:
     steps:
       - name: Update dependencies
         run: |
-          sudo apt-get update
+          #sudo apt-get update
           #sudo apt-get upgrade -y
+          sudo apt list --installed
+
 
       - name: Checkout smuview
         uses: actions/checkout@v3

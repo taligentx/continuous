@@ -53,20 +53,6 @@ scripts:
           popd
       done
 
-      # Build QWT
-      git clone https://github.com/czyt1988/QWT.git
-      pushd QWT
-      mkdir build
-      cd build
-      cmake -DCMAKE_INSTALL_PREFIX="$BUILD_DIR"/deps \
-            -DCMAKE_C_FLAGS="$CFLAGS" -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
-            -DQWT_CONFIG_BUILD_EXAMPLE=OFF -DQWT_CONFIG_BUILD_STATIC_EXAMPLE=OFF \
-            -DQWT_CONFIG_BUILD_PLAYGROUND=OFF ../
-      make -j$(nproc)
-      make install
-      popd
-
-
   post_build:
     - |2
       # Cleanup conda
