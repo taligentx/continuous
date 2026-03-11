@@ -55,6 +55,28 @@ scripts:
 
   post_build:
     - |2
+      echo "=============================="
+      echo "Diagnostics: Qwt / linker"
+      echo "=============================="
+
+      echo "--- Where is qwt installed?"
+      find /usr /usr/local -name "libqwt*.so*" 2>/dev/null || true
+
+      echo "--- Listing /usr/local/lib"
+      ls -l /usr/local/lib || true
+
+      echo "--- ldconfig cache"
+      sudo ldconfig -p | grep qwt || true
+
+      echo "--- ldd on smuview binary"
+      ldd cmake-build/smuview || true
+
+      echo "--- readelf dynamic section"
+      readelf -d cmake-build/smuview | egrep 'NEEDED|RPATH|RUNPATH' || true
+
+      echo "--- Environment"
+      env | sort
+    - |2
       # Cleanup conda
       export CONDA_SKIP_INSTALL=1
       export CONDA_SKIP_ADJUST_PATHS=0
@@ -83,4 +105,6 @@ appimage:
       - qt
     extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
+      - LINUXDEPLOY_VERBOSE=1
+      - LD_DEBUG=libs
       - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:"$BUILD_DIR"/AppDir/usr/conda/lib
