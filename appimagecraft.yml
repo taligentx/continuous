@@ -107,4 +107,4 @@ appimage:
     raw_environment:
       - LINUXDEPLOY_VERBOSE=1
       - LD_DEBUG=libs
-      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:"$BUILD_DIR"/AppDir/usr/conda/lib
+      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:"$BUILD_DIR"/AppDir/usr/conda/lib:/usr/local/lib
