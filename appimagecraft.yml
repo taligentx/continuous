@@ -30,7 +30,7 @@ scripts:
       # Use Micromamba instead of Miniconda for a much smaller footprint
       # Download micromamba binary
       mkdir -p bin
-      curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+      wget -qO- https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
       export MAMBA_EXE="$(pwd)/bin/micromamba"
 
       # Create environment in AppDir/usr/conda with only the necessary Python version
