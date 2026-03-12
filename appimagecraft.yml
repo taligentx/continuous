@@ -27,16 +27,46 @@ scripts:
   pre_build:
     - pushd "$BUILD_DIR"
     - |2
-      # We need the Python environment before the build already, therefore we have to run the conda
-      # plugin manually before the build
-      #wget https://github.com/linuxdeploy/linuxdeploy-plugin-conda/raw/master/linuxdeploy-plugin-conda.sh
-      #wget https://github.com/knarfS/linuxdeploy-plugin-conda/raw/master/linuxdeploy-plugin-conda.sh
-      wget https://raw.githubusercontent.com/taligentx/continuous/refs/heads/main/external/linuxdeploy-plugin-conda.sh
-      # Skip the built-in cleanup as the build needs the development files (headers, libs, ...)
-      export CONDA_SKIP_CLEANUP=1
-      export CONDA_SKIP_ADJUST_PATHS=1
-      chmod +x linuxdeploy-plugin-conda.sh
-      ./linuxdeploy-plugin-conda.sh --appdir AppDir
+      # Use Micromamba instead of Miniconda for a much smaller footprint
+      # Download micromamba binary
+      mkdir -p bin
+      curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+      export MAMBA_EXE="$(pwd)/bin/micromamba"
+
+      # Create environment in AppDir/usr/conda with only the necessary Python version
+      # Micromamba doesn't need a base environment, saving ~100MB+
+      mkdir -p AppDir/usr/conda
+      $MAMBA_EXE create -y -p AppDir/usr/conda -c conda-forge python=3.10
+
+      # Link binaries to usr/bin so they are easily accessible
+      mkdir -p AppDir/usr/bin
+      pushd AppDir/usr/conda/bin
+      for i in *; do
+          ln -s ../conda/bin/"$i" ../../bin/
+      done
+      popd
+
+      # Fix relocatability (similar to what the conda plugin does)
+      # replace absolute paths with $APPDIR references
+      [[ $BUILD_DIR = /* ]] && APPDIR_FULL="$BUILD_DIR/AppDir" || APPDIR_FULL="$(pwd)/AppDir"
+      pushd "$APPDIR_FULL"
+      # shebangs and basic relocatability for binaries/scripts
+      for i in usr/conda/bin/*; do
+          [ -f "$i" ] || continue
+          sed -i "s|^#!$APPDIR_FULL/usr/conda/bin/|#!/usr/bin/env |" "$i"
+      done
+      popd
+
+      # Create the hook script for linuxdeploy
+      mkdir -p AppDir/apprun-hooks
+      cat > AppDir/apprun-hooks/micromamba-hook.sh <<\EOF
+      export APPDIR=${APPDIR:-$(readlink -f $(dirname "$0"))}
+      export PATH="$APPDIR"/usr/bin:"$PATH"
+      export CONDA_PREFIX="$APPDIR"/usr/conda
+      export LD_LIBRARY_PATH="$APPDIR"/usr/conda/lib:"$LD_LIBRARY_PATH"
+      EOF
+
+      # Activate for the build itself
       . AppDir/usr/conda/bin/activate
     - popd
     - |2
@@ -79,17 +109,23 @@ scripts:
       env | sort
     - |2
       # Cleanup conda
-      export CONDA_SKIP_INSTALL=1
-      export CONDA_SKIP_ADJUST_PATHS=0
-      ./linuxdeploy-plugin-conda.sh --appdir AppDir
+      #export CONDA_SKIP_INSTALL=1
+      #export CONDA_SKIP_ADJUST_PATHS=0
+      #./linuxdeploy-plugin-conda.sh --appdir AppDir
     - |2
       # Generate AppRun.sh scrip
       cat > "$BUILD_DIR"/AppRun.sh <<\EOF
       #! /bin/bash
 
       # Load miniconda environment
-      . "$APPDIR"/usr/conda/etc/profile.d/conda.sh
-      conda activate
+      #. "$APPDIR"/usr/conda/etc/profile.d/conda.sh
+      #conda activate
+
+      # Set up environment (manual activation for speed and portability)
+      export APPDIR=${APPDIR:-$(readlink -f $(dirname "$0"))}
+      export PATH="$APPDIR/usr/bin:$PATH"
+      export CONDA_PREFIX="$APPDIR/usr/conda"
+      export LD_LIBRARY_PATH="$APPDIR/usr/conda/lib:$LD_LIBRARY_PATH"
 
       # Run SmuView
       exec "$APPDIR"/usr/bin/smuview "$@"
