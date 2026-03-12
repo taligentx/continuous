@@ -30,7 +30,8 @@ scripts:
       # We need the Python environment before the build already, therefore we have to run the conda
       # plugin manually before the build
       #wget https://github.com/linuxdeploy/linuxdeploy-plugin-conda/raw/master/linuxdeploy-plugin-conda.sh
-      wget https://github.com/knarfS/linuxdeploy-plugin-conda/raw/master/linuxdeploy-plugin-conda.sh
+      #wget https://github.com/knarfS/linuxdeploy-plugin-conda/raw/master/linuxdeploy-plugin-conda.sh
+      wget https://raw.githubusercontent.com/taligentx/continuous/refs/heads/main/external/linuxdeploy-plugin-conda.sh
       # Skip the built-in cleanup as the build needs the development files (headers, libs, ...)
       export CONDA_SKIP_CLEANUP=1
       export CONDA_SKIP_ADJUST_PATHS=1
