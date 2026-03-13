@@ -17,10 +17,11 @@ build:
       # the CMake build system has been instructed to load the dependencies via pkg-config
       - PKG_CONFIG_PATH="$BUILD_DIR"/deps/lib/pkgconfig:"$BUILD_DIR"/AppDir/usr/conda/lib/pkgconfig:"$PKG_CONFIG_PATH"
       # Also we want to use a newer CMake version
-      - PATH="$BUILD_DIR"/deps/bin:"$PATH"
+      #- PATH="$BUILD_DIR"/deps/bin:"$PATH"
+      - PATH="$BUILD_DIR"/deps/bin:"$BUILD_DIR"/AppDir/usr/conda/bin:"$PATH"
     script:
       - |2
-        . AppDir/usr/conda/bin/activate
+        #. AppDir/usr/conda/bin/activate
         echo "PKG_CONFIG_PATH (cmake): $PKG_CONFIG_PATH"
 
 scripts:
@@ -66,8 +67,10 @@ scripts:
       export LD_LIBRARY_PATH="$APPDIR"/usr/conda/lib:"$LD_LIBRARY_PATH"
       EOF
 
+      # Set PATH for the build itself
+      export PATH="$BUILD_DIR/AppDir/usr/conda/bin:$PATH"
       # Activate for the build itself
-      . AppDir/usr/conda/bin/activate
+      #. AppDir/usr/conda/bin/activate
     - popd
     - |2
       # Build libserialport and libsigrok
