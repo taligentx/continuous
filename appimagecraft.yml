@@ -116,6 +116,64 @@ scripts:
       #export CONDA_SKIP_ADJUST_PATHS=0
       #./linuxdeploy-plugin-conda.sh --appdir AppDir
     - |2
+      # Additional cleanup to minimize size
+      pushd AppDir
+
+      # 1. Purge unnecessary Python packages and modules
+      # These are only needed for building or are part of the standard library we don't use
+      PYTHON_LIB="usr/conda/lib/python3.10"
+      rm -rf "$PYTHON_LIB"/site-packages/pip*
+      rm -rf "$PYTHON_LIB"/site-packages/setuptools*
+      rm -rf "$PYTHON_LIB"/site-packages/wheel*
+      rm -rf "$PYTHON_LIB"/ensurepip
+      rm -rf "$PYTHON_LIB"/idlelib
+      rm -rf "$PYTHON_LIB"/lib2to3
+      rm -rf "$PYTHON_LIB"/tkinter
+      rm -rf "$PYTHON_LIB"/turtledemo
+      rm -rf "$PYTHON_LIB"/test
+
+      # 2. Remove all __pycache__ directories
+      find "$PYTHON_LIB" -type d -name "__pycache__" -exec rm -rf {} +
+
+      # 3. Remove duplicate libraries already present in usr/lib
+      # We prefer the ones in usr/lib as they are bundled by linuxdeploy for the AppImage
+      for lib in libpython3.10.so.1.0 libcrypto.so.3 libssl.so.3 libzstd.so.1 liblzma.so.5 libbz2.so.1.0 libffi.so.8; do
+          if [ -f usr/lib/"$lib" ] && [ -f usr/conda/lib/"$lib" ]; then
+              rm usr/conda/lib/"$lib"
+              # Ensure any versioned symlinks are handled
+              rm usr/conda/lib/"${lib%.*}"* || true
+          fi
+      done
+
+      # 4. Consolidate ICU data (saves ~30MB)
+      # Python/Conda uses a newer ICU, but we can try to use the one from usr/lib
+      # To be safe, we'll remove the older one if both exist and symlink if needed,
+      # but usually removing the Conda one and relying on LD_LIBRARY_PATH is better.
+      # Here we remove the redundant ICU 78 data from conda if ICU 70 is in usr/lib
+      if [ -f usr/lib/libicudata.so.70 ] && [ -f usr/conda/lib/libicudata.so.78.2 ]; then
+          rm usr/conda/lib/libicudata.so.78*
+          rm usr/conda/lib/libicui18n.so.78*
+          rm usr/conda/lib/libicuuc.so.78*
+      fi
+
+      # 5. Remove remaining build-only and metadata bloat
+      rm -rf usr/conda/conda-meta
+      rm -rf usr/conda/pkgs
+      rm -rf usr/conda/include
+      rm -rf usr/conda/share/gtk-doc
+      rm -rf usr/conda/share/doc
+      rm -rf usr/conda/share/man
+      rm -rf usr/conda/share/terminfo
+      rm -rf usr/conda/share/zoneinfo
+
+      # 6. Final strip of all binaries and libraries
+      find usr/conda/bin -type f -executable -exec strip {} \; || true
+      find usr/conda/lib -type f -iname "*.so*" -exec strip {} \; || true
+      find usr/bin -type f -executable -exec strip {} \; || true
+      find usr/lib -type f -iname "*.so*" -exec strip {} \; || true
+
+      popd
+    - |2
       # Generate AppRun.sh scrip
       cat > "$BUILD_DIR"/AppRun.sh <<\EOF
       #! /bin/bash
