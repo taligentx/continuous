@@ -166,7 +166,22 @@ scripts:
       rm -rf usr/conda/share/terminfo
       rm -rf usr/conda/share/zoneinfo
 
-      # 6. Final strip of all binaries and libraries
+      # 6. Additional aggressive cleanup
+      # Remove static libraries (*.a)
+      find usr/conda/lib -type f -name "*.a" -delete
+      # Remove Python test and test-support modules in dynload
+      find "$PYTHON_LIB"/lib-dynload -type f -name "_test*" -delete
+      # Remove unnecessary data/scripts in lib
+      rm -rf usr/conda/lib/tcl8.6
+      rm -rf usr/conda/lib/tk8.6
+      rm -rf usr/conda/lib/sqlite3*
+      # Remove unneeded binaries from conda/bin
+      rm -rf usr/conda/bin/zstd*
+      rm -rf usr/conda/bin/bzip2*
+      rm -rf usr/conda/bin/bzcat
+      rm -rf usr/conda/bin/bunzip2
+
+      # 7. Final strip of all binaries and libraries
       find usr/conda/bin -type f -executable -exec strip {} \; || true
       find usr/conda/lib -type f -iname "*.so*" -exec strip {} \; || true
       find usr/bin -type f -executable -exec strip {} \; || true
