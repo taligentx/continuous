@@ -57,4 +57,4 @@ appimage:
       - qt
     extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
-      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib
+      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:/usr/local/lib
