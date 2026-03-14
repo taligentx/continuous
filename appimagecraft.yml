@@ -2,85 +2,29 @@ version: 1
 
 project:
   name: com.github.knarfs.smuview
-  #version_command: git describe --tags
 
 build:
   cmake:
     extra_variables:
-      # Taken from some other script
       - DISABLE_WERROR=y
       - ENABLE_TESTS=n
       - CMAKE_EXPORT_COMPILE_COMMANDS=y
       - PYBIND11_FINDPYTHON=ON
+      - CMAKE_BUILD_TYPE=MinSizeRel
     raw_environment:
-      # We have to pre-build some dependencies, and also want to ship our own custom Python environment
-      # the CMake build system has been instructed to load the dependencies via pkg-config
-      - PKG_CONFIG_PATH="$BUILD_DIR"/deps/lib/pkgconfig:"$BUILD_DIR"/AppDir/usr/conda/lib/pkgconfig:"$PKG_CONFIG_PATH"
-      # Also we want to use a newer CMake version
-      #- PATH="$BUILD_DIR"/deps/bin:"$PATH"
-      - PATH="$BUILD_DIR"/deps/bin:"$BUILD_DIR"/AppDir/usr/conda/bin:"$PATH"
-    script:
-      - |2
-        #. AppDir/usr/conda/bin/activate
-        echo "PKG_CONFIG_PATH (cmake): $PKG_CONFIG_PATH"
+      - PKG_CONFIG_PATH="$BUILD_DIR"/deps/lib/pkgconfig:"$PKG_CONFIG_PATH"
+      - PATH="$BUILD_DIR"/deps/bin:"$PATH"
 
 scripts:
   pre_build:
-    - pushd "$BUILD_DIR"
     - |2
-      # Use Micromamba instead of Miniconda for a much smaller footprint
-      # Download micromamba binary
-      mkdir -p bin
-      wget -qO- https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-      export MAMBA_EXE="$(pwd)/bin/micromamba"
-
-      # Create environment in AppDir/usr/conda with only the necessary Python version
-      # Micromamba doesn't need a base environment, saving ~100MB+
-      mkdir -p AppDir/usr/conda
-      $MAMBA_EXE create -y -p AppDir/usr/conda -c conda-forge python=3.10
-
-      # Link binaries to usr/bin so they are easily accessible
-      mkdir -p AppDir/usr/bin
-      pushd AppDir/usr/conda/bin
-      for i in *; do
-          ln -s ../conda/bin/"$i" ../../bin/
-      done
-      popd
-
-      # Fix relocatability (similar to what the conda plugin does)
-      # replace absolute paths with $APPDIR references
-      [[ $BUILD_DIR = /* ]] && APPDIR_FULL="$BUILD_DIR/AppDir" || APPDIR_FULL="$(pwd)/AppDir"
-      pushd "$APPDIR_FULL"
-      # shebangs and basic relocatability for binaries/scripts
-      for i in usr/conda/bin/*; do
-          [ -f "$i" ] || continue
-          sed -i "s|^#!$APPDIR_FULL/usr/conda/bin/|#!/usr/bin/env |" "$i"
-      done
-      popd
-
-      # Create the hook script for linuxdeploy
-      mkdir -p AppDir/apprun-hooks
-      cat > AppDir/apprun-hooks/micromamba-hook.sh <<\EOF
-      export APPDIR=${APPDIR:-$(readlink -f $(dirname "$0"))}
-      export PATH="$APPDIR"/usr/bin:"$PATH"
-      export CONDA_PREFIX="$APPDIR"/usr/conda
-      export LD_LIBRARY_PATH="$APPDIR"/usr/conda/lib:"$LD_LIBRARY_PATH"
-      EOF
-
-      # Set PATH for the build itself
-      export PATH="$BUILD_DIR/AppDir/usr/conda/bin:$PATH"
-      # Activate for the build itself
-      #. AppDir/usr/conda/bin/activate
-    - popd
-    - |2
-      # Build libserialport and libsigrok
+      # Build libserialport and libsigrok from source into deps directory
+      mkdir -p "$BUILD_DIR"/deps
       for i in libserialport libsigrok; do
           git clone --depth=1 git://sigrok.org/"$i"
           pushd "$i"
           ./autogen.sh
-          # Once libserialport is built, libsigrok can be linked against it
           export PKG_CONFIG_PATH="$BUILD_DIR"/deps/lib/pkgconfig:"$PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH (pre_build): $PKG_CONFIG_PATH"
           ./configure --prefix="$BUILD_DIR"/deps
           make -j$(nprocs)
           make install
@@ -89,124 +33,19 @@ scripts:
 
   post_build:
     - |2
-      echo "=============================="
-      echo "Diagnostics: Qwt / linker"
-      echo "=============================="
-
-      echo "--- Where is qwt installed?"
-      find /usr /usr/local -name "libqwt*.so*" 2>/dev/null || true
-
-      echo "--- Listing /usr/local/lib"
-      ls -l /usr/local/lib || true
-
-      echo "--- ldconfig cache"
-      sudo ldconfig -p | grep qwt || true
-
-      echo "--- ldd on smuview binary"
-      ldd cmake-build/smuview || true
-
-      echo "--- readelf dynamic section"
-      readelf -d cmake-build/smuview | egrep 'NEEDED|RPATH|RUNPATH' || true
-
-      echo "--- Environment"
-      env | sort
-    - |2
-      # Cleanup conda
-      #export CONDA_SKIP_INSTALL=1
-      #export CONDA_SKIP_ADJUST_PATHS=0
-      #./linuxdeploy-plugin-conda.sh --appdir AppDir
-    - |2
-      # Additional cleanup to minimize size
+      # Strip binaries to minimize size
       pushd AppDir
-
-      # 1. Purge unnecessary Python packages and modules
-      # These are only needed for building or are part of the standard library we don't use
-      PYTHON_LIB="usr/conda/lib/python3.10"
-      rm -rf "$PYTHON_LIB"/site-packages/pip*
-      rm -rf "$PYTHON_LIB"/site-packages/setuptools*
-      rm -rf "$PYTHON_LIB"/site-packages/wheel*
-      rm -rf "$PYTHON_LIB"/ensurepip
-      rm -rf "$PYTHON_LIB"/idlelib
-      rm -rf "$PYTHON_LIB"/lib2to3
-      rm -rf "$PYTHON_LIB"/tkinter
-      rm -rf "$PYTHON_LIB"/turtledemo
-      rm -rf "$PYTHON_LIB"/test
-
-      # 2. Remove all __pycache__ directories
-      find "$PYTHON_LIB" -type d -name "__pycache__" -exec rm -rf {} +
-
-      # 3. Remove duplicate libraries already present in usr/lib
-      # We prefer the ones in usr/lib as they are bundled by linuxdeploy for the AppImage
-      for lib in libpython3.10.so.1.0 libcrypto.so.3 libssl.so.3 libzstd.so.1 liblzma.so.5 libbz2.so.1.0 libffi.so.8; do
-          if [ -f usr/lib/"$lib" ] && [ -f usr/conda/lib/"$lib" ]; then
-              rm usr/conda/lib/"$lib"
-              # Ensure any versioned symlinks are handled
-              rm usr/conda/lib/"${lib%.*}"* || true
-          fi
-      done
-
-      # 4. Consolidate ICU data (saves ~30MB)
-      # Python/Conda uses a newer ICU, but we can try to use the one from usr/lib
-      # To be safe, we'll remove the older one if both exist and symlink if needed,
-      # but usually removing the Conda one and relying on LD_LIBRARY_PATH is better.
-      # Here we remove the redundant ICU 78 data from conda if ICU 70 is in usr/lib
-      if [ -f usr/lib/libicudata.so.70 ] && [ -f usr/conda/lib/libicudata.so.78.2 ]; then
-          rm usr/conda/lib/libicudata.so.78*
-          rm usr/conda/lib/libicui18n.so.78*
-          rm usr/conda/lib/libicuuc.so.78*
-      fi
-
-      # 5. Remove remaining build-only and metadata bloat
-      rm -rf usr/conda/conda-meta
-      rm -rf usr/conda/pkgs
-      rm -rf usr/conda/include
-      rm -rf usr/conda/share/gtk-doc
-      rm -rf usr/conda/share/doc
-      rm -rf usr/conda/share/man
-      rm -rf usr/conda/share/terminfo
-      rm -rf usr/conda/share/zoneinfo
-
-      # 6. Additional aggressive cleanup
-      # Remove static libraries (*.a)
-      find usr/conda/lib -type f -name "*.a" -delete
-      # Remove Python test and test-support modules in dynload
-      find "$PYTHON_LIB"/lib-dynload -type f -name "_test*" -delete
-      # Remove unnecessary data/scripts in lib
-      rm -rf usr/conda/lib/tcl8.6
-      rm -rf usr/conda/lib/tk8.6
-      rm -rf usr/conda/lib/sqlite3*
-      # Remove unneeded binaries from conda/bin
-      rm -rf usr/conda/bin/zstd*
-      rm -rf usr/conda/bin/bzip2*
-      rm -rf usr/conda/bin/bzcat
-      rm -rf usr/conda/bin/bunzip2
-
-      # 7. Final strip of all binaries and libraries
-      find usr/conda/bin -type f -executable -exec strip {} \; || true
-      find usr/conda/lib -type f -iname "*.so*" -exec strip {} \; || true
       find usr/bin -type f -executable -exec strip {} \; || true
       find usr/lib -type f -iname "*.so*" -exec strip {} \; || true
-
       popd
     - |2
-      # Generate AppRun.sh scrip
+      # Generate AppRun.sh script (simple version)
       cat > "$BUILD_DIR"/AppRun.sh <<\EOF
       #! /bin/bash
-
-      # Load miniconda environment
-      #. "$APPDIR"/usr/conda/etc/profile.d/conda.sh
-      #conda activate
-
-      # Set up environment (manual activation for speed and portability)
       export APPDIR=${APPDIR:-$(readlink -f $(dirname "$0"))}
-      export PATH="$APPDIR/usr/bin:$PATH"
-      export CONDA_PREFIX="$APPDIR/usr/conda"
-      export LD_LIBRARY_PATH="$APPDIR/usr/conda/lib:$LD_LIBRARY_PATH"
-
-      # Run SmuView
       exec "$APPDIR"/usr/bin/smuview "$@"
       EOF
-    - chmod +x "$BUILD_DIR"/AppRun.sh
+      chmod +x "$BUILD_DIR"/AppRun.sh
     - |2
       # Set VERSION from CMake generated shell script
       source cmake-build/contrib/config_version.sh
@@ -218,6 +57,4 @@ appimage:
       - qt
     extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
-      - LINUXDEPLOY_VERBOSE=1
-      - LD_DEBUG=libs
-      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:"$BUILD_DIR"/AppDir/usr/conda/lib:/usr/local/lib
+      - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib

@@ -148,9 +148,19 @@ jobs:
     steps:
       - name: Update dependencies
         run: |
-          #sudo apt-get update
+          sudo apt-get update
           #sudo apt-get upgrade -y
           sudo apt list --installed
+          sudo apt-get install -y --no-install-recommends \
+            git build-essential autoconf automake libtool \
+            g++ autoconf-archive pkg-config libglib2.0-dev libglibmm-2.4-dev \
+            libzip-dev libusb-1.0-0-dev libftdi1-dev libieee1284-3-dev \
+            libvisa-dev nettle-dev libavahi-client-dev libhidapi-dev check \
+            doxygen swig bison flex pkg-config \
+            check libtirpc-dev libbluetooth-dev \
+            cmake libboost-dev libboost-test-dev \
+            python3-dev libpython3-dev libqwt-qt5-dev \
+            qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev
 
 
       - name: Checkout smuview
