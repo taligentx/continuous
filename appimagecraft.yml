@@ -33,16 +33,41 @@ scripts:
 
   post_build:
     - |2
-      # Strip binaries to minimize size
+      # 1. Bundle a minimal Python standard library
       pushd AppDir
+      mkdir -p usr/lib/python3.10
+      # Copy the base standard library (Python scripts)
+      cp -r /usr/lib/python3.10/*.py usr/lib/python3.10/
+      # Copy essential directories
+      for dir in encodings importlib collections json logging xml urllib asyncio email html http; do
+          cp -r /usr/lib/python3.10/"$dir" usr/lib/python3.10/
+      done
+      # Copy native modules (crucial for functionality)
+      cp -r /usr/lib/python3.10/lib-dynload usr/lib/python3.10/
+
+      # 2. Cleanup Python library to save space
+      find usr/lib/python3.10 -type d -name "__pycache__" -exec rm -rf {} +
+      rm -rf usr/lib/python3.10/lib-dynload/_test*
+
+      # 3. General Cleanup
+      rm -rf usr/translations
+      rm -rf usr/share/doc
+      rm -rf usr/share/man
+
+      # 4. Strip binaries to minimize size
       find usr/bin -type f -executable -exec strip {} \; || true
       find usr/lib -type f -iname "*.so*" -exec strip {} \; || true
       popd
     - |2
-      # Generate AppRun.sh script (simple version)
+      # Generate AppRun.sh script with Python environment variables
       cat > "$BUILD_DIR"/AppRun.sh <<\EOF
       #! /bin/bash
       export APPDIR=${APPDIR:-$(readlink -f $(dirname "$0"))}
+
+      # Set up Python environment to use the bundled library
+      export PYTHONHOME="$APPDIR"/usr
+      export PYTHONPATH="$APPDIR"/usr/lib/python3.10:"$APPDIR"/usr/lib/python3.10/lib-dynload
+
       exec "$APPDIR"/usr/bin/smuview "$@"
       EOF
       chmod +x "$BUILD_DIR"/AppRun.sh
