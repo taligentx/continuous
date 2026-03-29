@@ -34,30 +34,37 @@ scripts:
   post_build:
     - |2
       # 1. Bundle a minimal Python standard library
-      pushd AppDir
-      mkdir -p usr/lib/python3.10
-      # Copy the base standard library (Python scripts)
-      cp -r /usr/lib/python3.10/*.py usr/lib/python3.10/
-      # Copy essential directories
+      APPDIR_PATH="$BUILD_DIR/AppDir"
+      PYTHON_DEST="$APPDIR_PATH/usr/lib/python3.10"
+      mkdir -p "$PYTHON_DEST"
+
+      # Copy essential Python files and directories
+      cp -r /usr/lib/python3.10/*.py "$PYTHON_DEST"/
       for dir in encodings importlib collections json logging xml urllib asyncio email html http; do
-          cp -r /usr/lib/python3.10/"$dir" usr/lib/python3.10/
+          [ -d "/usr/lib/python3.10/$dir" ] && cp -r /usr/lib/python3.10/"$dir" "$PYTHON_DEST"/
       done
-      # Copy native modules (crucial for functionality)
-      cp -r /usr/lib/python3.10/lib-dynload usr/lib/python3.10/
+      cp -r /usr/lib/python3.10/lib-dynload "$PYTHON_DEST"/
 
-      # 2. Cleanup Python library to save space
-      find usr/lib/python3.10 -type d -name "__pycache__" -exec rm -rf {} +
-      rm -rf usr/lib/python3.10/lib-dynload/_test*
-
-      # 3. General Cleanup
-      rm -rf usr/translations
-      rm -rf usr/share/doc
-      rm -rf usr/share/man
-
-      # 4. Strip binaries to minimize size
-      find usr/bin -type f -executable -exec strip {} \; || true
-      find usr/lib -type f -iname "*.so*" -exec strip {} \; || true
+      # 2. Aggressive Python Cleanup
+      pushd "$PYTHON_DEST"
+      # Remove non-essential files
+      rm -f antigravity.py turtle.py turtledemo.py smtpd.py config-*.py
+      rm -rf turtledemo test idlelib tkinter
+      # Remove all __pycache__
+      find . -type d -name "__pycache__" -exec rm -rf {} +
+      # Remove test modules from lib-dynload
+      rm -f lib-dynload/_test*
       popd
+
+      # 3. Universal Cleanup (ensure these are gone even if re-added by plugins)
+      rm -rf "$APPDIR_PATH"/usr/translations
+      rm -rf "$APPDIR_PATH"/usr/share/doc
+      rm -rf "$APPDIR_PATH"/usr/share/man
+      rm -rf "$APPDIR_PATH"/usr/share/info
+
+      # 4. Strip everything
+      find "$APPDIR_PATH"/usr/bin -type f -executable -exec strip {} \; || true
+      find "$APPDIR_PATH"/usr/lib -type f -iname "*.so*" -exec strip {} \; || true
     - |2
       # Generate AppRun.sh script with Python environment variables
       cat > "$BUILD_DIR"/AppRun.sh <<\EOF
