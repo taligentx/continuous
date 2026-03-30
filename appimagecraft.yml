@@ -75,6 +75,9 @@ scripts:
       export PYTHONHOME="$APPDIR"/usr
       export PYTHONPATH="$APPDIR"/usr/lib/python3.10:"$APPDIR"/usr/lib/python3.10/lib-dynload
 
+      # Enable Wayland support with X11 fallback
+      export QT_QPA_PLATFORM="wayland;xcb"
+
       exec "$APPDIR"/usr/bin/smuview "$@"
       EOF
       chmod +x "$BUILD_DIR"/AppRun.sh

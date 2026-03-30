@@ -160,7 +160,7 @@ jobs:
             check libtirpc-dev libbluetooth-dev \
             cmake libboost-dev libboost-test-dev \
             python3-dev libpython3-dev \
-            qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev
+            qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev qtwayland5
 
 
       - name: Checkout smuview
