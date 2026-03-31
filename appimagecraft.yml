@@ -93,5 +93,5 @@ appimage:
     extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
       - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:/usr/local/lib
-      - EXTRA_PLATFORM_PLUGINS=wayland
-      - EXTRA_QT_PLUGINS=wayland-shell-integration,wayland-graphics-integration-client
+      - 'EXTRA_PLATFORM_PLUGINS=libqwayland-egl.so;libqwayland-generic.so'
+      - 'EXTRA_QT_PLUGINS=wayland-shell-integration;wayland-graphics-integration-client'
