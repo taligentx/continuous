@@ -14,6 +14,8 @@ build:
     raw_environment:
       - PKG_CONFIG_PATH="$BUILD_DIR"/deps/lib/pkgconfig:"$PKG_CONFIG_PATH"
       - PATH="$BUILD_DIR"/deps/bin:"$PATH"
+      - EXTRA_PLATFORM_PLUGINS=wayland
+      - EXTRA_QT_PLUGINS=wayland-shell-integration
 
 scripts:
   pre_build:
@@ -93,4 +95,3 @@ appimage:
     extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
       - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:/usr/local/lib
-      - EXTRA_QT_PLUGINS=wayland
