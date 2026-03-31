@@ -75,10 +75,11 @@ scripts:
       export PYTHONHOME="$APPDIR"/usr
       export PYTHONPATH="$APPDIR"/usr/lib/python3.10:"$APPDIR"/usr/lib/python3.10/lib-dynload
 
-      # Enable Wayland support with X11 fallback
-      export QT_QPA_PLATFORM="wayland;xcb"
-      export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
       export QT_PLUGIN_PATH="$APPDIR"/usr/plugins
+      if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+          export QT_QPA_PLATFORM="wayland;xcb"
+          export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+      fi
 
       exec "$APPDIR"/usr/bin/smuview "$@"
       EOF
@@ -92,8 +93,11 @@ appimage:
   linuxdeploy:
     plugins:
       - qt
-    extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
+    extra_args: >
+      --custom-apprun "$BUILD_DIR"/AppRun.sh
+      -l /usr/lib/x86_64-linux-gnu/qt5/plugins/wayland-graphics-integration-client/libqtwayland-egl.so
+      -l /usr/lib/x86_64-linux-gnu/qt5/plugins/wayland-graphics-integration-client/libqtwayland-shm.so
     raw_environment:
       - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:/usr/local/lib
-      - 'EXTRA_PLATFORM_PLUGINS=libqwayland-egl.so\;libqwayland-generic.so\;libqxcb.so'
-      - 'EXTRA_QT_PLUGINS=wayland-graphics-integration-client\;wayland-shell-integration\;wayland-decoration-client'
+      - EXTRA_PLATFORM_PLUGINS=libqwayland-egl.so,libqwayland-generic.so,libqxcb.so
+      - EXTRA_QT_PLUGINS=wayland-shell-integration,wayland-decoration-client
