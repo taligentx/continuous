@@ -89,9 +89,6 @@ appimage:
   linuxdeploy:
     plugins:
       - qt
-    extra_args: >
-      --custom-apprun "$BUILD_DIR"/AppRun.sh
-      -l /usr/lib/x86_64-linux-gnu/qt5/plugins/wayland-graphics-integration-client/libqtwayland-egl.so
-      -l /usr/lib/x86_64-linux-gnu/qt5/plugins/wayland-graphics-integration-client/libqtwayland-shm.so
+    extra_args: --custom-apprun "$BUILD_DIR"/AppRun.sh
     raw_environment:
       - LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$BUILD_DIR"/deps/lib:/usr/local/lib
